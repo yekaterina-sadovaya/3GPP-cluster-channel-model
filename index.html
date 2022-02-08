@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="Style.css" />
+    <title>Channel Modeler</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="shortcut icon" href="#" />
+
+</head>
+
+<body>
+    <a id="button"><i class="fas fa-angle-up fa-2x"></i></a>
+    <div class="container-fluid">
+        <div class="tm-site-header tm-mb-1">
+            <div class="tm-site-name-container tm-bg-color-1">
+                <h1 class="tm-text-white">Channel Modeler</h1>
+            </div>
+            <div class="tm-nav-container tm-bg-color-8">
+                <nav class="tm-nav" id="tm-nav">
+                    <ul>
+                        <li class="tm-nav-item current">
+                            <a href="#about" class="tm-nav-link">
+                                <span class="tm-mb-1"></span>
+                                <span>About</span>
+                            </a>
+                        </li>
+                        <li class="tm-nav-item">
+                            <a href="#gallery" class="tm-nav-link">
+                                <span class="tm-mb-1"></span>
+                                <span>Run Test Scenario</span>
+                            </a>
+                        </li>
+                        <li class="tm-nav-item">
+                            <a href="#contact" class="tm-nav-link">
+                                <span class="tm-nav-text tm-mb-1"></span>
+                                <span class="tm-nav-text">Contact</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <section class="tm-mb-1" id="about">
+            <div class="tm-row tm-about-row">
+                <article class="tm-section-1-r tm-bg-color-8">
+                    <p> We create solutions for wireless networks</p>
+                    <p> This is an example of how our model could be used.</p>
+
+                </article>
+            </div>
+        </section>
+
+
+        <section class="tm-bg-color-4 tm-mb-3 tm-gallery-section" id="gallery">
+            <div class="tm-gallery-header">
+                <h2 class="tm-mb-1 text-right"> Run Test Scenario</h2>
+                <ul class="tm-gallery-filter tabs clearfix filters-button-group">
+                    <form>
+                        Duration in tics: <input type="text" size="20" id="sim_duration" />
+                        <button type="button" id="submit_button">Submit</button>
+                    </form>
+                    <div id="ticsInfo">
+                    </div>
+                    <script src="Script.js"></script>
+                </ul>
+            </div>
+        </section> <!-- Gallery -->
+
+        <section id="contact" class="tm-bg-color-5 tm-mb-3">
+            <h2 class="tm-text-white tm-contact-title"> Contact Us</h2>
+            <div class="tm-bg-color-white tm-contact-main">
+                <div class="map-outer">
+                    <div class="gmap-canvas">
+                        <!-- How to change your own map point
+                            1. Go to Google Maps
+                            2. Click on your location point
+                            3. Click "Share" and choose "Embed map" tab
+                            4. Copy only URL and paste it within the src="" field below
+                        -->
+                        <iframe width="100%" height="400" id="gmap-canvas"
+                                src="https://maps.google.com/maps?q=Korkeakoulunkatu+1,Tampere,Finland&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                                frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
+                    </div>
+                </div>
+                <div class="contact-form-outer">
+                    <form id="contact-form" action="" method="POST" class="tm-bg-color-6 tm-contact-form">
+                        <div class="form-group">
+                            <input type="text" name="name" class="form-control" placeholder="Name" required="" />
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email" class="form-control" placeholder="Email" required="" />
+                        </div>
+                        <div class="form-group">
+                            <textarea rows="4" name="message" class="form-control" placeholder="Message..."
+                                      required=""></textarea>
+                        </div>
+                        <div>
+                            <button type="submit" class="ml-auto tm-btn tm-btn-3">
+                                Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="contact-info-outer">
+                    <div class="tm-bg-color-6 contact-info">
+                        <p>If you are intereseted in this tool contact us via email or by phone.</p>
+                        <p class="tm-mb-0">Tel: <a href="tel:0100200990">010-020-0990</a></p>
+                        <p>Email: <a href="mailto:info@company.com">info@company.com</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center tm-mb-1">
+            <p>
+                Copyright &copy; 2021 Tampere University
+
+            </p>
+        </footer>
+
+    </div> <!-- .container -->
+    <script type="text/javascript" src="Script.js"></script>
+
+</body>
+</html>
