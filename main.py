@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 import mpld3
 from mpld3 import plugins
-np.random.seed(9615)
+
+import json
 
 
-def fig2html():
+def fig2html(N):
+
     # generate df
-    N = 100
     df = pd.DataFrame((.1 * (np.random.random((N, 5)) - .5)).cumsum(0),
                       columns=['a', 'b', 'c', 'd', 'e'],)
     # plot line + confidence interval
@@ -37,9 +38,4 @@ def fig2html():
     ax.set_title('Interactive legend', size=20)
 
     fig_html = mpld3.fig_to_html(fig)
-    text = 'text text'
-    return text
-
-
-if __name__ == "__main__":
-    html = fig2html()
+    return fig_html
