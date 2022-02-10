@@ -1,3 +1,7 @@
+// initialize figure to empty before doing the calculations
+// var url = "/test.png";
+// $("#imgId").attr("src", url);
+
 function RunPythonSim() {
     var sim_duration = document.getElementById("sim_duration");
     sim_duration = sim_duration.value;
@@ -14,20 +18,6 @@ function RunPythonSim() {
 
 document.getElementById("submit_button").onclick = RunPythonSim;
 
-// url: "http://localhost:8000/main.py"
-// success: callbackFunc
-
-/*
-var jqXHR = $.ajax({
-    type: "POST",
-    url: "/main.py",
-    data: JSON.stringify({ param: input })
-});
-
-return jqXHR.responseText;
-
-*/
-
 
 function runPyScript(input) {
 
@@ -37,8 +27,9 @@ function runPyScript(input) {
         dataType: "json",
         url: "/main.py",
         data: JSON.stringify({ 'sim_dur': input }),
-        success: function (response) {
-            console.log(response)
+        success: function () {
+
+            $("#includedContent").load('/figure.html'); 
         }
     });
 

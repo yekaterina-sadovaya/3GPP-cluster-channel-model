@@ -37,5 +37,13 @@ def fig2html(N):
     ax.set_ylabel('y')
     ax.set_title('Interactive legend', size=20)
 
-    fig_html = mpld3.fig_to_html(fig)
-    return fig_html
+    fig = mpld3.fig_to_html(fig)
+    # fig = mpld3.fig_to_dict(fig)
+    file = open("figure.html","w")
+    file.write(fig)
+    file.close()
+
+
+if __name__ == "__main__":
+    fig2html(3)
+    # mpld3.save_html(fig,"figure.html")
