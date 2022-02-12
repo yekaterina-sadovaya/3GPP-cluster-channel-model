@@ -7,6 +7,9 @@ from numpy.random import shuffle, uniform, choice, normal, rand
 from typing import Union
 import matplotlib.pyplot as plt
 
+import mpld3
+from mpld3 import plugins
+
 
 def calculate_3gpp_antenna(aoa_az, aoa_el, N, wavelength):
     """This function creates a directional antenna pattern depending on the
@@ -460,38 +463,51 @@ class MP_Propagation_Model(object):
 
 def run_channel(f_carrier, dst_pos, src_pos, pl_type, N_clusters, N_rays):
 
-    plt.figure()
+    dst_pos = np.array(dst_pos)
+    src_pos = np.array(src_pos)
     ch_params = MP_chan_params(f_carrier, N_clusters, N_rays)
     ch_prop_model = MP_Propagation_Model(ch_params, Nant_tx=4, Nant_rx=4)
     Ch_params_clusters = ch_prop_model.get_Cluster_channel_mmWave(f_carrier, dst_pos, src_pos, pl_type)
+
+    fig0, ax0 = plt.subplots()
     max_power = max(Ch_params_clusters.MPC_powers)
+    x, y = np.array([]), np.array([])
     for i, sample in enumerate(Ch_params_clusters.MPC_delays):
         pn = np.ones(len(sample))*(Ch_params_clusters.MPC_powers[i]*(1/(len(sample))))/max_power
-        plt.stem(sample*1e6, pn)
-    plt.ylabel('Normalized CIR')
-    plt.xlabel('Delay, $\mu$s')
-    plt.ylim([0,1])
-    plt.grid()
+        x = np.append(x, np.array(sample)*1e6)
+        y = np.append(y, pn)
+    ax0.stem(x, y)
+    ax0.set_ylabel('Normalized CIR')
+    ax0.set_xlabel('Delay, $\mu$s')
+    ax0.set_ylim([0,1])
+    ax0.grid()
 
-    fig, ax = plt.subplots(subplot_kw=dict(projection='3d'))
-    ax.scatter(dst_pos[0], dst_pos[1], dst_pos[2], color='g', marker='^', s=80, label='Rx')
-    ax.scatter(src_pos[0], src_pos[1], src_pos[2], color='r', marker='^', s=80, label='Tx')
-    for n_cluster in range(0, len(Ch_params_clusters.MPC_aoas)):
-        d = Ch_params_clusters.tx_rx_dist/2 + 100*np.random.randn()
-        color = '#%06X' % np.random.randint(0, 0xFFFFFF)
-        c_coord = np.zeros([len(Ch_params_clusters.MPC_aoas[n_cluster]), 3])
-        for n_ray in range(0, len(Ch_params_clusters.MPC_aoas[n_cluster])):
-            x,y,z=sph2cart(Ch_params_clusters.MPC_aoas[n_cluster][n_ray],
-                           Ch_params_clusters.MPC_zoas[n_cluster][n_ray], d)
-            c_coord[n_ray,0] = x
-            c_coord[n_ray,1] = y
-            c_coord[n_ray,2] = z
-            ax.plot([dst_pos[0], x], [dst_pos[1], y], [dst_pos[2], z], color=color, alpha=0.3)
-            ax.plot([x, src_pos[0]], [y, src_pos[1]], [z, src_pos[2]], color=color, alpha=0.3)
-        ax.scatter(np.mean(c_coord[:,0]), np.mean(c_coord[:,1]), np.mean(c_coord[:,2]),  color=color, alpha=0.2, s=500)
-    ax.set(xlabel='x', ylabel='y', zlabel='z')
-    ax.legend()
-    plt.show()
+    # fig, ax = plt.subplots(subplot_kw=dict(projection='3d'))
+    # ax.scatter(dst_pos[0], dst_pos[1], dst_pos[2], color='g', marker='^', s=80, label='Rx')
+    # ax.scatter(src_pos[0], src_pos[1], src_pos[2], color='r', marker='^', s=80, label='Tx')
+    # for n_cluster in range(0, len(Ch_params_clusters.MPC_aoas)):
+    #     d = Ch_params_clusters.tx_rx_dist/2 + 100*np.random.randn()
+    #     color = '#%06X' % np.random.randint(0, 0xFFFFFF)
+    #     c_coord = np.zeros([len(Ch_params_clusters.MPC_aoas[n_cluster]), 3])
+    #     for n_ray in range(0, len(Ch_params_clusters.MPC_aoas[n_cluster])):
+    #         x,y,z=sph2cart(Ch_params_clusters.MPC_aoas[n_cluster][n_ray],
+    #                        Ch_params_clusters.MPC_zoas[n_cluster][n_ray], d)
+    #         c_coord[n_ray,0] = x
+    #         c_coord[n_ray,1] = y
+    #         c_coord[n_ray,2] = z
+    #         ax.plot([dst_pos[0], x], [dst_pos[1], y], [dst_pos[2], z], color=color, alpha=0.3)
+    #         ax.plot([x, src_pos[0]], [y, src_pos[1]], [z, src_pos[2]], color=color, alpha=0.3)
+    #     ax.scatter(np.mean(c_coord[:,0]), np.mean(c_coord[:,1]), np.mean(c_coord[:,2]),  color=color, alpha=0.2, s=500)
+    # ax.set(xlabel='x', ylabel='y', zlabel='z')
+    # ax.legend()
+
+    fig0 = mpld3.fig_to_html(fig0)
+    # fig = mpld3.fig_to_dict(fig)
+    file = open("figure.html","w")
+    file.write(fig0)
+    file.close()
+
+    # plt.show()
 
 
 if __name__ == '__main__':

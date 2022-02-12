@@ -11,7 +11,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
     <link rel="shortcut icon" href="#" />
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,600,800' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
 </head>
 
@@ -50,8 +50,20 @@
         <section class="tm-mb-1" id="about">
             <div class="tm-row tm-about-row">
                 <article class="tm-section-1-r tm-bg-color-8">
-                    <p> We create solutions for wireless networks</p>
-                    <p> This is an example of how our model could be used.</p>
+                    <p> This is a demo to demonstrate integrability of a Python-based simulator.
+					I included the 2D channel modeler as an example. 
+					</p>
+					<p> <b>About the channel simulator: </b>
+					<br> This is 2D channel modeler, i.e., the simple version of a ray launcher, which computes much faster.
+					In general, these kind of simulators are used to calculate 
+					</p>
+					
+					<p> <b> About the web architecture: </b>
+					<br> 
+					The HTTP server is implemented in Python using the http library.
+					AJAX (Asynchronous JavaScript and XML) is used to send an asynchronous request to the server, which hosts the computation script. 
+					After the computations are done, the results are coverted to the html formal using the mpld3 library, which allows keeping them interactive.
+					</p>
 
                 </article>
             </div>
@@ -63,9 +75,18 @@
                 <h2 class="tm-mb-1 text-right"> Run Test Scenario</h2>
                 <ul class="tm-gallery-filter tabs clearfix filters-button-group">
                     <form>
-                        Duration in tics: <input type="text" size="20" id="sim_duration" />
-                        <button type="button" id="submit_button">Submit</button>
-                    </form>
+                        Carrier Frequency, GHz: &nbsp &nbsp  &nbsp &nbsp &nbsp <input type="text" size="20" id="car_freq" />
+						<br>
+						Number of Clusters: &nbsp &nbsp &nbsp &nbsp  &nbsp &nbsp &nbsp &nbsp  <input type="text" size="20" id="num_clusters" />
+						<br>
+						Number of Rays per Cluster: <input type="text" size="20" id="num_rays" />
+						<br>
+						Rx Position (x, y, z): &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp  &nbsp &nbsp &nbsp <input type="text" size="20" id="rx_pos" />
+						<br>
+						Tx Position (x, y, z): &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp  &nbsp &nbsp &nbsp <input type="text" size="20" id="tx_pos" />
+						<br>
+						<button type="button" id="submit_button">Submit</button>
+                    </form>					
                     <div id="ticsInfo">
                     </div>
                     <script src="Script.js"></script>
