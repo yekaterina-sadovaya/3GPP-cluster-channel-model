@@ -1,11 +1,21 @@
 ﻿
 body {
-    font-family: 'Open Sans', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-size: 18px;
-    padding-left: 15px;
+    padding-left: 18px;
     padding-right: 15px;
     margin: 0;
 }
+
+div {
+    font-family: 'Montserrat', sans-serif;
+}
+
+img {
+      display: block;
+	  margin: 0 auto;
+      width: 40%;
+    }
 
 h2 {
     font-size: 1.7rem;
@@ -30,3 +40,86 @@ p {
     line-height: 1.7;
     margin-bottom: 35px;
 }
+
+ul, h1, h2, h3, h4, p, figure {
+    padding: 20px;
+    margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #333;
+}
+
+
+.tm-mb-0 {
+    margin-bottom: 0;
+}
+
+.tm-mb-1 {
+    margin-bottom: 20px;
+}
+
+.tm-mb-2 {
+    margin-bottom: 40px;
+}
+
+.tm-mb-3 {
+    margin-bottom: 60px;
+}
+
+.tm-mb-4 {
+    margin-bottom: 30px;
+}
+
+.tm-bg-color-1 {
+    background-color: #9999CC;
+}
+
+.tm-bg-color-2 {
+    background-color: #CC9999;
+}
+
+.tm-bg-color-3 {
+    background-color: #666666;
+}
+
+.tm-bg-color-4 {
+    background-color: #99CCFF;
+}
+
+.tm-bg-color-5 {
+    background-color: #99CC99;
+}
+
+.tm-bg-color-6 {
+    background-color: #F2F2F2;
+}
+
+.tm-bg-color-7 {
+    background-color: #DDD;
+}
+
+.tm-bg-color-8 {
+    background-color: #EDEEEF;
+}
+/* Nav background */
+.tm-bg-color-white {
+    background-color: white;
+}
+
+.tm-text-color-1 {
+    color: #666;
+}
+
+.tm-text-color-2 {
+    color: #333;
+}
+
+.tm-text-white {
+    color: #fff;
+}
+
+.text-center {
+    text-align: center;
+}
+
