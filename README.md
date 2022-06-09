@@ -12,6 +12,7 @@ However, the purpose of GUI is to simplify the user expirience. The instructions
 
 ### Instructions for running with GUI
 
+- Clone this repository: https://github.com/yekaterina-sadovaya/3GPP-cluster-channel-model.git
 - Run the HTTP server by launching the HTTP_server.py
 - This will start the HTTP server at http://localhost:8000/
 - Go to http://localhost:8000/ and click "Run Test Scenario"

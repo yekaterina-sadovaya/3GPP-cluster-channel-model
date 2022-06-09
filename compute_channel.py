@@ -5,10 +5,9 @@ from cmath import exp
 from scipy.constants import speed_of_light
 from numpy.random import shuffle, uniform, choice, normal, rand
 from typing import Union
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-
 import mpld3
-from mpld3 import plugins
 
 
 def calculate_3gpp_antenna(aoa_az, aoa_el, N, wavelength):
@@ -20,18 +19,18 @@ def calculate_3gpp_antenna(aoa_az, aoa_el, N, wavelength):
     d_v = d_h
     N_hor = N
     N_vert = N
-    Am = 30   # the front-back ratio
-    SLA = 30  # the lower limit
-    G = 0     # maximum gain of an antenna element
+    Am = 30     # the front-back ratio
+    SLA = 30    # the lower limit
+    G = 0       # maximum gain of an antenna element
     ang_3db = 65*pi/180
     A_eh = -min(12 * ((aoa_az / ang_3db) ** 2), Am)
     A_ev = -min(12 * ((aoa_el / ang_3db) ** 2), SLA)
-    # compute a magnitude of an element pattern
+    # Compute a magnitude of an element pattern
     P_E = G - min(-(A_eh + A_ev), Am)
     P_e = 10**(P_E/20)
 
     a = []
-    # calculate phase shift and weighting factor for all array elements
+    # Calculate phase shift and weighting factor for all array elements
     for m in range(0,N_hor):
         for n in range(0, N_vert):
             v = exp(-2j*pi*((n-1)*cos(aoa_el)*(d_v/wavelength) + (m-1)*sin(aoa_el)*sin(aoa_az)*(d_h/wavelength) ))
@@ -40,30 +39,37 @@ def calculate_3gpp_antenna(aoa_az, aoa_el, N, wavelength):
             E_mn = P_e*v*w
             a.append(E_mn)
 
-    # calculate the gain as the superposition of the elements
+    # Calculate the gain as the superposition of the elements
     G = 20*log10(abs(sum(a)))
     return G
 
 
 def norm(v: np.ndarray) -> [np.ndarray, float]:
+    """Normalises the value"""
     return np.sqrt((v * v).sum(axis=0))
 
 
 def vector_normalize(v: np.ndarray) -> np.ndarray:
+    """Normalises the vector"""
     n = norm(v)
     assert n > 0, "Can not normalize null vector!"
     return v / norm(v)
 
 
 def DB2RATIO(d):
+    """Performs conversion from dB to linear scale for better visual
+    interpretation of the code"""
     return 10.0 ** (d / 10.0)
 
 
 def RATIO2DB(x):
+    """Performs conversion linear scale to dB for better visual
+    interpretation of the code"""
     return 10.0 * np.log10(x)
 
 
 def cart2sph(x, y, z):
+    """Converts Cartesian coordinates into spherical"""
     hxy = np.hypot(x, y)
     r = np.hypot(hxy, z)
     el = np.arctan2(z, hxy)
@@ -71,7 +77,8 @@ def cart2sph(x, y, z):
     return az, el, r
 
 
-def sph2cart(az, el, r = 1):
+def sph2cart(az, el, r=1):
+    """Converts spherical coordinates into Cartesian"""
     x = r*sin(el)*cos(az)
     y = r*sin(el)*sin(az)
     z = r*cos(el)
@@ -79,10 +86,12 @@ def sph2cart(az, el, r = 1):
 
 
 def friis_path_loss_dB(dist: [float, np.ndarray], frequency_Hz: float, n: float = 2.0) -> Union[float, np.ndarray]:
+    """Friis path loss formula for calibration"""
     return RATIO2DB(np.power(speed_of_light / (frequency_Hz * 4 * pi * dist), n))
 
 
 class MP_chan_params(object):
+    """This class defines basic parameters of the channel"""
     def __init__(self, carrier_frequency_Hz, N_clust, N_rays):
         self.N_clust = N_clust  # number of clusters
         self.N_rays = N_rays    # number of rays per cluster
@@ -113,21 +122,22 @@ class MP_chan_params(object):
 
 
 class MP_Chan_State(object):
-
+    """This class stores the output of the propagation model"""
     def __init__(self):
         self.PL = 0
         self.phase_delay = 0
 
 
-def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
+def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type: str):
+    """This function generates clusters according to the 3GPP TR 38.901 and returning delay, power values, ect."""
     res = MP_Chan_State()
-    # Simple 3GPP-like cluster generation; return cluster_delays, cluster powers
+    # First, larger-scale parameters are defined
     los_ray_pow = 0
     asd_spread = 1.06 + 0.114*log10(carrier_frequency_Hz)
     asa_spread = 1.81
-    zsd_spread = 0  # 10**(max(-0.0023*d + 0.81, 0))
+    zsd_spread = 0
 
-    zsa_spread = 0.95  # 10**(max(-0.002*d + 0.83, 0))
+    zsa_spread = 0.95
     angle_offset = [0.0447, -0.0447,
                     0.1413, -0.1413,
                     0.2492, -0.2492,
@@ -139,19 +149,43 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
                     1.5195, -1.5195,
                     2.1551, -2.1551]
 
-    zsd_mean = 0  # max(-0.002 * d + 1.05, 4)
+    zsd_mean = 0
     zsd_var = 0.32
 
-    zsa_mean = 0.95  # max(-0.0025 * d + 1.1, 3)
+    zsa_mean = 0.95
     zsa_var = 0.16
 
-    zbd_mean = 0  # max(-0.0022 * d + 1.36, 0.6)
+    zbd_mean = 0
     zbd_var = 0.3
 
-    zba_mean = 0  # max(-0.00172 * d + 1.09, 0.4)
+    zba_mean = 0
     zba_var = 0.3
 
-    # Generating rays parameters
+    normal_var_vect = [normal(loc=0., scale=1.) for _ in range(0, 7)]
+    # Correlation matrix provides consistency to this model
+    cor_matrix = [[1.0, 0.49, 0, 0.29, 0, 0.2, -0.26],
+                  [0.49, 1.0, 0, 0.62, 0, 0.47, -0.16],
+                  [0, 0, 1.0, 0, 0.55, 0, 0.45],
+                  [0.29, 0.62, 0, 1.0, 0.33, 0.76, 0.17],
+                  [0, 0, 0.55, 0.33, 1.0, 0.33, 0.69],
+                  [0.2, 0.47, 0, 0.76, 0.33, 1.0, 0.39],
+                  [-0.26, -0.16, 0.45, 0.17, 0.69, 0.39, 1.0]]
+    V, D = np.linalg.eigh(cor_matrix, UPLO='U')
+    cor_multiplier = np.dot(D, np.sqrt(np.diag(V)))
+    normal_var_vect = np.dot(cor_multiplier, normal_var_vect)
+    PL = self.get_LOS_channel(d).PL
+
+    d_spread = 10 ** ((self.params.ds_var * normal_var_vect[0]) + self.params.ds_mean)
+
+    asd = min(10 ** ((self.params.asd_var * normal_var_vect[1]) + self.params.asd_mean), 100.0)
+    asa = min(10 ** ((self.params.asa_var * normal_var_vect[2]) + self.params.asa_mean), 100.0)
+    zsd = min(10 ** ((zsd_var * normal_var_vect[3]) + zsd_mean), 40.0)
+    zsa = min(10 ** ((zsa_var * normal_var_vect[4]) + zsa_mean), 40.0)
+    m_bias_zod = max(-10 ** (zbd_mean + zbd_var * normal_var_vect[5]), -75)
+    m_bias_zoa = max(-10 ** (zba_mean + zba_var * normal_var_vect[6]), -75)
+    ricean_fact = abs((self.params.ricean_fact_var * normal_var_vect[5]) + self.params.ricean_fact_mean)
+
+    # Then, ray-related parameters are generated
     outgoing_ray = dv
     outgoing_ray = vector_normalize(outgoing_ray)
     los_aod, los_zod, r = cart2sph(outgoing_ray[0], outgoing_ray[1],
@@ -166,66 +200,32 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
     los_aoa = np.degrees(los_aoa)
     los_zoa = np.degrees(los_zoa)
 
-    cluster_delays = []
-    cluster_powers_init = []
-    cluster_aoas = []
-    cluster_aods = []
-    cluster_zoas = []
-    cluster_zods = []
+    cluster_delays, cluster_powers_init = [], []
+    cluster_aoas, cluster_aods = [], []
+    cluster_zoas, cluster_zods = [], []
 
     cluster_delays_list = []
-    cluster_aoas_list = []
-    cluster_aods_list = []
-    cluster_zoas_list = []
-    cluster_zods_list = []
+    cluster_aoas_list, cluster_aods_list = [], []
+    cluster_zoas_list, cluster_zods_list = [], []
     cluster_xpr_list = []
-    cluster_phiVV_list = []
-    cluster_phiVH_list = []
-    cluster_phiHV_list = []
-    cluster_phiHH_list = []
+    cluster_phiVV_list, cluster_phiVH_list = [], []
+    cluster_phiHV_list, cluster_phiHH_list = [], []
 
-    # Generating lagre scale parameters
-
-    normal_var_vect = [normal(loc=0., scale=1.) for i in range(0, 7)]
-    cor_matrix = [
-        [1.0, 0.49, 0, 0.29, 0, 0.2, -0.26],
-        [0.49, 1.0, 0, 0.62, 0, 0.47, -0.16],
-        [0, 0, 1.0, 0, 0.55, 0, 0.45],
-        [0.29, 0.62, 0, 1.0, 0.33, 0.76, 0.17],
-        [0, 0, 0.55, 0.33, 1.0, 0.33, 0.69],
-        [0.2, 0.47, 0, 0.76, 0.33, 1.0, 0.39],
-        [-0.26, -0.16, 0.45, 0.17, 0.69, 0.39, 1.0]]
-    V, D = np.linalg.eigh(cor_matrix, UPLO='U')
-    cor_multiplier = np.dot(D, np.sqrt(np.diag(V)))
-    normal_var_vect = np.dot(cor_multiplier, normal_var_vect)
-    PL = self.get_LOS_channel(d).PL
-
-    # laplac_var_vect = laplace(size=2)
-    d_spread = 10 ** ((self.params.ds_var * normal_var_vect[0]) + self.params.ds_mean)
-
-    asd = min(10 ** ((self.params.asd_var * normal_var_vect[1]) + self.params.asd_mean), 100.0)
-    asa = min(10 ** ((self.params.asa_var * normal_var_vect[2]) + self.params.asa_mean), 100.0)
-    zsd = min(10 ** ((zsd_var * normal_var_vect[3]) + zsd_mean), 40.0)
-    zsa = min(10 ** ((zsa_var * normal_var_vect[4]) + zsa_mean), 40.0)
-    m_bias_zod = max(-10 ** (zbd_mean + zbd_var * normal_var_vect[5]), -75)
-    m_bias_zoa = max(-10 ** (zba_mean + zba_var * normal_var_vect[6]), -75)
-    ricean_fact = abs((self.params.ricean_fact_var * normal_var_vect[5]) + self.params.ricean_fact_mean)
     for i in range(0, self.params.N_clust):
         delay_var = uniform(0.000000001, 1.0)
-        # Delays
         delay = -self.params.delay_scaling * d_spread * np.log(delay_var)
         cluster_delays.append(delay)
+    # The MPCs are stored according to the arrival time
     cluster_delays.sort()
     if PL_type == 'NLOS':
         res.phase_delay = np.array(cluster_delays).min()
         cluster_delays -= res.phase_delay
 
     for i in range(0, len(cluster_delays)):
-        # cluster_delays_new.append(cluster_delays[i])
         cluster_delays_new = []
         for j in range(0, self.params.N_rays):
             delay = cluster_delays[i]
-            if j > 4 and j <= 7:
+            if 4 < j <= 7:
                 delay += 5e-9
             elif j > 7:
                 delay += 10e-9
@@ -233,17 +233,17 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
         cluster_delays_list.append(cluster_delays_new)
 
     for i in range(0, self.params.N_clust):
-        # Cluster powers
+        # The power values are computed based on the computed delay and the defined delay spread and scaling, i.e.,
+        # the MPC, which arrives earlier is typically associated with higher power
         z_clust = normal(0, self.params.per_clust_sh ** 2)
         power = (10 ** (-0.1 * z_clust)) * np.exp(
             -cluster_delays[i] * (self.params.delay_scaling - 1) / (self.params.delay_scaling * d_spread))
         cluster_powers_init.append(power)
 
     cluster_powers = list(np.array(cluster_powers_init) / sum(cluster_powers_init))
-    # cluster_delays = cluster_delays_list
 
-    # AoDs and AoAs
     for i in range(0, self.params.N_clust):
+        # This part computes departure and arrival angles (AoDs and AoAs)
         xn = [-1, 1]
         uni_rand_int = choice(xn)
         norm_rand_var = normal(0, asd / 7)
@@ -270,17 +270,14 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
         cluster_zoas.append(zoa)
         cluster_zods.append(zod)
 
-        aoa_list = []
-        zoa_list = []
-        aod_list = []
-        zod_list = []
+        aoa_list, aod_list = [], []
+        zoa_list, zod_list = [], []
         xpr_list = []
-        phiVV_list = []
-        phiVH_list = []
-        phiHV_list = []
-        phiHH_list = []
+        phiVV_list, phiVH_list = [], []
+        phiHV_list, phiHH_list = [], []
 
         for j in range(0, self.params.N_rays):
+            # After the angles are generated, the offset is added per each ray within the cluster
             xn = [1, -1]
             aod_ray = aod + asd_spread * xn[j % len(xn)] * angle_offset[int(floor(j / 2))]
             aoa_ray = aoa + asa_spread * xn[j % len(xn)] * angle_offset[int(floor(j / 2))]
@@ -301,6 +298,7 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
             phiVH_list.append(phiVH)
             phiHV_list.append(phiHV)
             phiHH_list.append(phiHH)
+
         shuffle(aoa_list)
         shuffle(aod_list)
         shuffle(zoa_list)
@@ -314,10 +312,10 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
         cluster_phiVH_list.append(phiVH_list)
         cluster_phiHV_list.append(phiHV_list)
         cluster_phiHH_list.append(phiHH_list)
+
     if PL_type == 'LOS':
         los_ray_pow = ricean_fact / (1 + ricean_fact)
         cluster_powers.insert(0, los_ray_pow)
-        # cluster_powers = list(np.array(cluster_powers_init) / ((ricean_fact + 1) * sum(cluster_powers_init)))
         cluster_aoas.insert(0, los_aoa)
         cluster_aods.insert(0, los_aod)
         cluster_zoas.insert(0, los_zoa)
@@ -329,8 +327,8 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
         cluster_zoas_list.insert(0, [los_zoa])
         cluster_zods_list.insert(0, [los_zod])
         phiVV = -pi + 2 * pi * rand()
-        phiVH = 0  # -pi + 2 * pi * random()
-        phiHV = 0  # -pi + 2 * pi * random()
+        phiVH = 0
+        phiHV = 0
         phiHH = phiVV + pi
         cluster_xpr_list.insert(0, [float('inf')])
         cluster_phiVV_list.insert(0, [phiVV])
@@ -351,6 +349,7 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
     cluster_phiHV_list = np.array(cluster_phiHV_list)
     cluster_phiHH_list = np.array(cluster_phiHH_list)
 
+    # Gather all the parameters
     result = [res, PL, PL_type, N_clusters, cluster_powers, cluster_aoas, cluster_aods, cluster_zoas,
               cluster_zods, cluster_phiVV_list, cluster_phiVH_list, cluster_phiHV_list, cluster_phiHH_list,
               cluster_xpr_list, cluster_delays_list, los_ray_pow]
@@ -358,14 +357,19 @@ def generate_clusters(self, carrier_frequency_Hz: float, d, dv, PL_type:str):
 
 
 class MP_Propagation_Model(object):
+    """This class is used to calculate the final channel state. It employs the functions
+     and classes defined above. It performs weighting of the MPC components according to an antenna pattern,
+     ads a LoS component and  performs power correction
+    """
 
     def __init__(self, params: MP_chan_params, Nant_tx, Nant_rx):
+        # This defines the channel parameters and the number of antenna elements at the Tx and Rx
         self.params = params
         self.Nant_tx = Nant_tx
         self.Nant_rx = Nant_rx
 
     def get_LOS_channel(self, dist):
-
+        # Computes the LoS component
         PL = -self.params.prop_loss_function(dist, self.params.carrier, self.params.coverage_n)
         cs = MP_Chan_State()
         cs.PL = PL
@@ -373,28 +377,30 @@ class MP_Propagation_Model(object):
         return cs
 
     def get_Cluster_channel_mmWave(self, carrier_frequency_Hz, src_pos, dst_pos, PL_type):
-
+        # Weighting of the MPC components, power correction, and LoS path are computed within this method
         dv = src_pos - dst_pos
         dist = np.linalg.norm(dv)
-        direction = dv/dist
+        direction = dv/dist     # It is assumed that Tx and Rx are aligned, which allows computing
+                                # attenuation of other MPCs arriving at the antenna
 
+        # The direction is converted into the angular coordinates and provided as an input to an antenna model
         azimuth_angle_tx, zenith_angle_tx, r = cart2sph(direction[0], direction[1], direction[2])
         tx_ant = [azimuth_angle_tx, zenith_angle_tx]
 
         azimuth_angle_rx, zenith_angle_rx, r = cart2sph(-direction[0], -direction[1], direction[2])
-
         rx_ant = [azimuth_angle_rx, zenith_angle_rx]
 
-        clusters = generate_clusters(self, carrier_frequency_Hz,dist, dv, PL_type)
+        clusters = generate_clusters(self, carrier_frequency_Hz, dist, dv, PL_type)
 
         res, PL, PL_type, N_clusters, cluster_powers, cluster_aoas, cluster_aods, cluster_zoas, cluster_zods, \
         cluster_phiVV_list, cluster_phiVH_list, cluster_phiHV_list, cluster_phiHH_list, \
         cluster_xpr_list, cluster_delays_list, los_ray_pow = clusters
 
         ir = []
-        cluster_tx_gains_list = []
-        cluster_rx_gains_list = []
+        cluster_tx_gains_list, cluster_rx_gains_list = [], []
         for i in range(0, len(cluster_aods)):
+            # Weighting of MPCs according to their angles and direction
+            # of antenna patterns are computed for the Tx and Rx
             tx_gains_list = []
             rx_gains_list = []
             for j in range(0, len(cluster_aods[i])):
@@ -435,7 +441,7 @@ class MP_Propagation_Model(object):
 
                 assert tx_gains >= 0 and rx_gains >= 0
                 test1 = np.dot(np.dot(f_rx, pol_matrix), f_tx)
-                result = (test1 * tx_gains * rx_gains) ** 0.5  # np.dot(np.dot(f_rx,pol_matrix),f_tx)*tx_gains*rx_gains
+                result = (test1 * tx_gains * rx_gains) ** 0.5
                 ray_values.append(result)
             los_mult = 1
             if PL_type == 'LOS':
@@ -443,11 +449,10 @@ class MP_Propagation_Model(object):
             imp_r_val = sum(np.abs(
                 los_mult * sqrt(cluster_powers[i] / len(cluster_tx_gains_list[i])) * np.array(ray_values)) ** 2)
             ir.append(imp_r_val)
-        ir = np.array(ir)  # *(1/32)#/max(impulse_responce)
+        ir = np.array(ir)
         IR_power_correction = RATIO2DB((np.sum(ir)))
 
         res.MPC_delays = [el + dist/speed_of_light for el in cluster_delays_list]
-        # res.MPC_powers = RATIO2DB(np.array(cluster_powers))
         res.MPC_powers = np.array(cluster_powers)
         res.PL = PL - IR_power_correction
         res.Power_correction = IR_power_correction
@@ -462,12 +467,46 @@ class MP_Propagation_Model(object):
 
 
 def run_channel(f_carrier, dst_pos, src_pos, pl_type, N_clusters, N_rays):
-
+    """This functions runs the cluster generation procedure and MPC weighting.
+    The final results are displayed in the form of """
     dst_pos = np.array(dst_pos)
     src_pos = np.array(src_pos)
     ch_params = MP_chan_params(f_carrier, N_clusters, N_rays)
     ch_prop_model = MP_Propagation_Model(ch_params, Nant_tx=4, Nant_rx=4)
     Ch_params_clusters = ch_prop_model.get_Cluster_channel_mmWave(f_carrier, dst_pos, src_pos, pl_type)
+
+    fig = go.Figure()
+    # Plot destination and source coordinates
+    fig.add_trace(go.Scatter3d(x=[dst_pos[0]], y=[dst_pos[1]], z=[dst_pos[2]], mode='markers', name='Rx'))
+    fig.add_trace(go.Scatter3d(x=[src_pos[0]], y=[src_pos[1]], z=[src_pos[2]], mode='markers', name='Tx'))
+    layout = go.Layout(yaxis=dict(range=[0, 0.4]))
+    for n_cluster in range(0, len(Ch_params_clusters.MPC_aoas)):
+        d = Ch_params_clusters.tx_rx_dist/2 + 100*np.random.randn()
+        # The colors for the 3D plot are generated randomly
+        color = tuple(np.random.randint(0, 255, 3))
+        c_coord = np.zeros([len(Ch_params_clusters.MPC_aoas[n_cluster]), 3])
+        for n_ray in range(0, len(Ch_params_clusters.MPC_aoas[n_cluster])):
+            x,y,z=sph2cart(Ch_params_clusters.MPC_aoas[n_cluster][n_ray],
+                           Ch_params_clusters.MPC_zoas[n_cluster][n_ray], d)
+            c_coord[n_ray, 0] = x
+            c_coord[n_ray, 1] = y
+            c_coord[n_ray, 2] = z
+            # Plot rays from/to each cluster
+            fig.add_trace(go.Scatter3d(x=[dst_pos[0], x, src_pos[0]],
+                                       y=[dst_pos[1], y, src_pos[1]], z=[dst_pos[2], z, src_pos[2]],
+                          marker=dict(size=0.1,
+                                      color='rgba' + str(color)[0:-1] + ', 0.3)',
+                                      colorscale='Viridis',
+                                      opacity=0.8), name='Ray ' + str(n_ray + 1)))
+        # Plot clusters
+        fig.add_trace(go.Scatter3d(x=[np.mean(c_coord[:,0])], y=[np.mean(c_coord[:,1])], z=[np.mean(c_coord[:,2])],
+                      marker=dict(size=20,
+                      color='rgba' + str(color)[0:-1] + ', 0.3)',
+                      colorscale='Viridis',
+                      opacity=0.5), name='Cluster ' + str(n_cluster + 1)))
+
+    fig.show()
+    fig.write_html("test.html")
 
     fig0, ax0 = plt.subplots()
     max_power = max(Ch_params_clusters.MPC_powers)
@@ -478,36 +517,13 @@ def run_channel(f_carrier, dst_pos, src_pos, pl_type, N_clusters, N_rays):
         y = np.append(y, pn)
     ax0.stem(x, y)
     ax0.set_ylabel('Normalized CIR')
-    ax0.set_xlabel('Delay, $\mu$s')
+    ax0.set_xlabel('Delay, µs')
     ax0.set_ylim([0,1])
     ax0.grid()
-
-    # fig, ax = plt.subplots(subplot_kw=dict(projection='3d'))
-    # ax.scatter(dst_pos[0], dst_pos[1], dst_pos[2], color='g', marker='^', s=80, label='Rx')
-    # ax.scatter(src_pos[0], src_pos[1], src_pos[2], color='r', marker='^', s=80, label='Tx')
-    # for n_cluster in range(0, len(Ch_params_clusters.MPC_aoas)):
-    #     d = Ch_params_clusters.tx_rx_dist/2 + 100*np.random.randn()
-    #     color = '#%06X' % np.random.randint(0, 0xFFFFFF)
-    #     c_coord = np.zeros([len(Ch_params_clusters.MPC_aoas[n_cluster]), 3])
-    #     for n_ray in range(0, len(Ch_params_clusters.MPC_aoas[n_cluster])):
-    #         x,y,z=sph2cart(Ch_params_clusters.MPC_aoas[n_cluster][n_ray],
-    #                        Ch_params_clusters.MPC_zoas[n_cluster][n_ray], d)
-    #         c_coord[n_ray,0] = x
-    #         c_coord[n_ray,1] = y
-    #         c_coord[n_ray,2] = z
-    #         ax.plot([dst_pos[0], x], [dst_pos[1], y], [dst_pos[2], z], color=color, alpha=0.3)
-    #         ax.plot([x, src_pos[0]], [y, src_pos[1]], [z, src_pos[2]], color=color, alpha=0.3)
-    #     ax.scatter(np.mean(c_coord[:,0]), np.mean(c_coord[:,1]), np.mean(c_coord[:,2]),  color=color, alpha=0.2, s=500)
-    # ax.set(xlabel='x', ylabel='y', zlabel='z')
-    # ax.legend()
-
     fig0 = mpld3.fig_to_html(fig0)
-    # fig = mpld3.fig_to_dict(fig)
     file = open("figure.html","w")
     file.write(fig0)
     file.close()
-
-    # plt.show()
 
 
 if __name__ == '__main__':

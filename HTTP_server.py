@@ -4,15 +4,14 @@ import os
 from mimetypes import types_map
 import simplejson
 
-
-from main import fig2html
 from compute_channel import run_channel
 
 
 class webserverHandler(BaseHTTPRequestHandler):
-    """docstring for webserverHandler"""
+    """HTTP server implementation with GET and POST methods"""
 
     def do_GET(self):
+        # GET method for the server
         try:
             curdir = os.getcwd()
             if self.path == "/":
@@ -38,19 +37,18 @@ class webserverHandler(BaseHTTPRequestHandler):
             self.send_error(404, "File not found %s" % self.path)
 
     def do_POST(self):
+        # POST method for the server
         try:
 
             data_string = self.rfile.read(int(self.headers['Content-Length']))
             self.send_response(200)
 
-            # load json to dict
+            # Load JSON to dict
             data = simplejson.loads(data_string)
-            # N = data['sim_dur']
-            # output = fig2html(int(N))
             output = run_channel(data['car_freq'], data['rx_pos'], data['tx_pos'], 'LOS',
                                  data['num_clusters'], data['num_rays'])
 
-            # send the message back
+            # Send the message back
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -58,6 +56,7 @@ class webserverHandler(BaseHTTPRequestHandler):
             self.wfile.write(output_b.encode())
 
         except:
+            # Send error message if did not succeed
             self.send_error(404, "{}".format(sys.exc_info()[0]))
             print(sys.exc_info())
 
@@ -65,7 +64,6 @@ class webserverHandler(BaseHTTPRequestHandler):
 def main():
     try:
         port = 8000
-        # port = 3000
         server = HTTPServer(('', port), webserverHandler)
         print("Web server running on port %s" % port)
         server.serve_forever()
