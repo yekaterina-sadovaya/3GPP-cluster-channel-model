@@ -20,7 +20,7 @@ However, the purpose of GUI is to simplify the user expirience. The instructions
 - Set parameters according to the instruction provided on the web page and click "submit" button, which will send the AJAX request to the server 
 - Wait for the results to appear on the same web page
 
-<img src="https://github.com/yekaterina-sadovaya/3GPP-cluster-channel-model/fig/example_results.png">
+![alt text](https://github.com/yekaterina-sadovaya/3GPP-cluster-channel-model/fig/example_results.png?raw=true)
 
 ### Instructions for running without GUI
 
