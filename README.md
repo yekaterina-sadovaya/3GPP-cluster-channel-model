@@ -22,6 +22,7 @@ However, the purpose of GUI is to simplify the user expirience. The instructions
 
 <br />
 The calculation results should be be displayed with the figures, e.g., as in the example below.
+
 ![alt text](/fig/example_results.png)
 
 ### Instructions for running without GUI
