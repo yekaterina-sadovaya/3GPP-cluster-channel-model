@@ -54,7 +54,7 @@
                     <p> This is the GUI for the implemented <b>spatial channel model (SCM)</b>. 
 					</p>
 					<p> <b>About the channel simulator: </b>
-					<p> This is the implementation if the 3rd Generation Partnership Project (3GPP) SCM in Python.
+					<p> This is the implementation if the 3rd Generation Partnership Project (3GPP) SCM <a href="#lit" class="tm-nav-link">[1]</a> in Python.
 						 It is typically used to calculate the channel between the transmit (Tx) and receive (Rx) antennas.
 						 In this web application, user is asked to enter the Tx and Rx coordinates together with other system parameters.
 						 Then, after the calculations have been performed, the results are displayed in the form of the channel impulse response (CIR)
@@ -122,7 +122,7 @@
             <h2 class="tm-text-white tm-contact-title"> Theoretical Background</h2>
             <div class="tm-bg-color-white tm-contact-main">
                 
-                <p> This channel model is defined in the 3GPP standard TR 138.901 [1]. 
+                <p> This channel model is defined in the 3GPP standard TR 138.901 <a href="#lit" class="tm-nav-link">[1]</a>. 
 				It suits for the frequency range from 0.5 up to 100 GHz.
 				The main purpose of this model is to provide an estimation of channel conditions. 
 				There are many other channel models exist for modeling communication channels, which are divided into the following categories: 
@@ -139,16 +139,30 @@
 				The overall procedure of channel generation according to this model can be described with the following figure:
 				</p>
 				<img src="./fig/channel_gen_procedure.png"/>
-				<p> One major benefit of this model is that it provides spatial consistency as compared to many other stochastic models.
-				
+				<p> 				
+				According to this model, the received signal consists of N delayed paths of the transmitted signal. These N paths are
+				defined by powers and delays and are chosen randomly according to the channel generation procedure. Each path
+				consists of M subpaths. The subpaths within the cluster are correlated and they have similar angular and delay characteristics as it can be seed from the figure below.
+				One major benefit of this model is that it provides spatial consistency as compared to many other stochastic models, which is provided by the correlation matrix.
+				For system modeling in time, this model is typically used in the following way.
+				The fast fading per-path evolves in time while the large-scale parameters such as, e.g., angular spread and delay spread remain fixed during the drop. 
+				</p>
+				<img src="./fig/angles_and_paths.png"/>
+				<img src="./fig/notations.png"/>
+				<p>
+				An antenna array is modeled according to <a href="#lit" class="tm-nav-link">[2]</a>, which implies that the resultant antenna pattern is represented as a superposition of element patterns.
+				Therefore, the resultant Half Power Beam Width (HPBW) and the directional antenna gain of the antenna array depend on the number of antenna elements. 
+				The pattern is used at the final step of the calculations to weight evey incomming paths and recalculate the received power. 
 				</p>
                 
             </div>
         </section>
 
-        <footer class="text-center tm-mb-1">
+        <footer class="text tm-mb-1" id="lit">
+		<h2> References</h2>
             <p>
-                [1] Reference 1
+                [1] 3GPP, “Study on channel model for frequencies from 0.5 to 100 GHz”, 3GPP TR 138.901 <br>
+				[2] 3GPP, “Study of AAS Base Station”, 3GPP TR 37.840 
 
             </p>
         </footer>
